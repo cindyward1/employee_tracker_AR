@@ -2,6 +2,7 @@ require 'active_record'
 
 require './lib/employee.rb'
 require './lib/division.rb'
+require './lib/project.rb'
 
 database_configurations = YAML::load(File.open('./db/config.yml'))
 development_configuration = database_configurations['development']
@@ -19,7 +20,8 @@ end
 def main_menu
   user_choice = nil
   until user_choice == 'x'
-    puts "\nEnter 'e' for the employee menu, 'd' for the division menu"
+    puts "\nEnter 'e' for the employee menu, 'd' for the division menu,"
+    puts "   or 'p' for the project menu"
     puts "Enter 'm' to return to the main menu, and 'x' to exit the program\n"
     user_choice = gets.chomp
 
@@ -28,6 +30,8 @@ def main_menu
       employee_menu
     when 'd'
       division_menu
+    when 'p'
+      project_menu
     when 'm'
       # nothing
     when 'x'
@@ -106,6 +110,42 @@ def view_divisions
   puts "\n\nHere's a list of all of the divisions:"
   Division.all.each do |division|
     puts "#{division.id}. #{division.name}"
+  end
+  puts "\n"
+end
+
+def project_menu
+
+  puts "\nEnter 'a' to add an project, 'v' to view all projects"
+  puts "Enter 'm' to return to the main menu, and 'x' to exit the program\n"
+  user_choice = gets.chomp
+
+  case user_choice
+  when 'a'
+    add_project
+  when 'v'
+    view_projects
+  when 'm'
+    # nothing
+  when 'x'
+    puts "Have a good one!"
+  else
+    puts "Invalid option, please try again"
+  end
+end
+
+def add_project
+  puts "\n\nEnter the project's name:"
+  project_name = gets.chomp
+  project = Project.new({:name => project_name, :done=>false, :employee_id => 0})
+  project.save
+  puts "'#{project_name}' has been successfully added."
+end
+
+def view_projects
+  puts "\n\nHere's a list of all of the projects:"
+  Project.all.each do |project|
+    puts "#{project.id}. #{project.name}"
   end
   puts "\n"
 end
