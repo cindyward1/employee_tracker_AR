@@ -1,5 +1,4 @@
 require 'active_record'
-require 'shoulda-matchers'
 require 'rspec'
 
 require 'employee'

@@ -44,7 +44,8 @@ end
 
 def employee_menu
 
-  puts "\nEnter 'a' to add an employee, 'v' to view all employees"
+  puts "\nEnter 'a' to add an employee, 'v' to view all employees,"
+  puts "      'd' to assign an employee to a division"
   puts "Enter 'm' to return to the main menu, and 'x' to exit the program\n"
   user_choice = gets.chomp
 
@@ -53,6 +54,8 @@ def employee_menu
     add_employee
   when 'v'
     view_employees
+  when 'd'
+    assign_employee_to_division
   when 'm'
     # nothing
   when 'x'
@@ -72,15 +75,34 @@ end
 
 def view_employees
   puts "\n\nHere's a list of all of the employees:"
-  Employee.all.each do |employee|
+  Employee.all.order(:id).each do |employee|
     puts "#{employee.id}. #{employee.name}"
   end
   puts "\n"
 end
 
+def assign_employee_to_division
+  view_employees
+  puts "\nSelect the index of the employee that you wish to assign to a division"
+  the_employee_id = gets.chomp.to_i
+  the_employee = Employee.where({:id=>the_employee_id}).first
+  if the_employee.division_id == 0
+    view_divisions
+  puts "\nSelect the index of the division where you wish to assign the employee"
+    the_division_id = gets.chomp.to_i
+    the_employee.update({:division_id=>the_division_id})
+    the_division = Division.where({:id=>the_division_id}).first
+    puts "\nProject #{the_employee.name} has been assigned to #{the_division.name}\n"
+  else
+    the_division = Division.where({:id=>the_employee.division_id}).first
+    puts "\nThat employee has already been assigned to #{the_division.name}\n"
+  end
+end
+
 def division_menu
 
-  puts "\nEnter 'a' to add a division, 'v' to view all divisions"
+  puts "\nEnter 'a' to add a division, 'v' to view all divisions,"
+  puts "   or 'e' to list all employees in a division"
   puts "Enter 'm' to return to the main menu, and 'x' to exit the program\n"
   user_choice = gets.chomp
 
@@ -89,6 +111,8 @@ def division_menu
     add_division
   when 'v'
     view_divisions
+  when 'e'
+    view_employees_in_division
   when 'm'
     # nothing
   when 'x'
@@ -108,15 +132,33 @@ end
 
 def view_divisions
   puts "\n\nHere's a list of all of the divisions:"
-  Division.all.each do |division|
+  Division.all.order(:id).each do |division|
     puts "#{division.id}. #{division.name}"
+  end
+  puts "\n"
+end
+
+def view_employees_in_division
+  view_divisions
+  puts "Select the index of the division whose employees you wish to see"
+  the_division_id = gets.chomp.to_i
+  the_division = Division.where({:id=>the_division_id}).first
+  the_employee_array = Employee.where({:division_id=>the_division.id}).order(:id)
+  if the_employee_array.length > 0
+    puts "\nFor division #{the_division.name}, the employees are:"
+    the_employee_array.each do |the_employee|
+      puts "#{the_employee.id}. #{the_employee.name}"
+    end
+  else
+    puts "The division #{the_division.name} has no employees"
   end
   puts "\n"
 end
 
 def project_menu
 
-  puts "\nEnter 'a' to add an project, 'v' to view all projects"
+  puts "\nEnter 'a' to add an project, 'v' to view all projects, or"
+  puts "     'e to assign a project to an employee, or c to mark a project as completed"
   puts "Enter 'm' to return to the main menu, and 'x' to exit the program\n"
   user_choice = gets.chomp
 
@@ -125,6 +167,10 @@ def project_menu
     add_project
   when 'v'
     view_projects
+  when 'e'
+    assign_project_to_employee
+  when 'c'
+    mark_project_as_completed
   when 'm'
     # nothing
   when 'x'
@@ -144,10 +190,42 @@ end
 
 def view_projects
   puts "\n\nHere's a list of all of the projects:"
-  Project.all.each do |project|
+  Project.all.order(:id).each do |project|
     puts "#{project.id}. #{project.name}"
   end
   puts "\n"
+end
+
+def assign_project_to_employee
+  view_projects
+  puts "\nSelect the index of the project that you wish to assign to an employee"
+  the_project_id = gets.chomp.to_i
+  the_project = Project.where({:id=>the_project_id}).first
+  if the_project.employee_id == 0
+    view_employees
+    puts "\nSelect the index of the employee to whom you wish to assign the project"
+    the_employee_id = gets.chomp.to_i
+    the_project.update({:employee_id=>the_employee_id})
+    the_employee = Employee.where({:id=>the_employee_id}).first
+    puts "\nProject #{the_project.name} has been assigned to #{the_employee.name}\n"
+  else
+    the_employee = Employee.where({:id=>the_project.employee_id}).first
+    puts "\nThat project has already been assigned to #{the_employee.name}\n"
+  end
+end
+
+def mark_project_as_completed
+  view_projects
+  puts "\nSelect the index of the project that you wish to mark as completed"
+  the_project_id = gets.chomp.to_i
+  the_project = Project.where({:id=>the_project_id}).first
+  if the_project.done == false
+    the_project.update({:done=>true})
+    puts "\nProject #{the_project.name} has been marked as completed\n"
+  else
+    the_employee = Employee.where({:id=>the_project.employee_id}).first
+    puts "\nThat project has already been marked as completed\n"
+  end
 end
 
 welcome
