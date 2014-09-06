@@ -3,6 +3,7 @@ require 'active_record'
 require './lib/employee.rb'
 require './lib/division.rb'
 require './lib/project.rb'
+require './lib/employee_project.rb'
 
 database_configurations = YAML::load(File.open('./db/config.yml'))
 development_configuration = database_configurations['development']
@@ -75,8 +76,12 @@ end
 
 def view_employees
   puts "\n\nHere's a list of all of the employees:"
-  Employee.all.order(:id).each do |employee|
-    puts "#{employee.id}. #{employee.name}"
+  Employee.all.order(:division_id, :id).each do |employee|
+    if employee.division_id != 0
+      puts "#{employee.id}. #{employee.name}, Division = #{employee.division.name}"
+    else
+      puts "#{employee.id}. #{employee.name}, Division = Not yet assigned"
+    end
   end
   puts "\n"
 end
@@ -155,10 +160,14 @@ def view_employees_in_division
   puts "\n"
 end
 
+def view_projects_in_division
+end
+
 def project_menu
 
   puts "\nEnter 'a' to add an project, 'v' to view all projects, or"
-  puts "     'e to assign a project to an employee, or c to mark a project as completed"
+  puts "     'e to assign a project to an employee, or c to mark a project as complete, or"
+  puts "     'w' to see what employees are working on a project"
   puts "Enter 'm' to return to the main menu, and 'x' to exit the program\n"
   user_choice = gets.chomp
 
@@ -171,6 +180,8 @@ def project_menu
     assign_project_to_employee
   when 'c'
     mark_project_as_completed
+  when 'w'
+    project_who_working
   when 'm'
     # nothing
   when 'x'
@@ -183,15 +194,15 @@ end
 def add_project
   puts "\n\nEnter the project's name:"
   project_name = gets.chomp
-  project = Project.new({:name => project_name, :done=>false, :employee_id => 0})
+  project = Project.new({:name => project_name, :done=>false})
   project.save
   puts "'#{project_name}' has been successfully added."
 end
 
 def view_projects
   puts "\n\nHere's a list of all of the projects:"
-  Project.all.order(:id).each do |project|
-    puts "#{project.id}. #{project.name}"
+  Project.all.order(:done, :id).each do |project|
+    puts "#{project.id}. #{project.name}; done = #{project.done}"
   end
   puts "\n"
 end
@@ -201,17 +212,16 @@ def assign_project_to_employee
   puts "\nSelect the index of the project that you wish to assign to an employee"
   the_project_id = gets.chomp.to_i
   the_project = Project.where({:id=>the_project_id}).first
-  if the_project.employee_id == 0
-    view_employees
-    puts "\nSelect the index of the employee to whom you wish to assign the project"
-    the_employee_id = gets.chomp.to_i
-    the_project.update({:employee_id=>the_employee_id})
-    the_employee = Employee.where({:id=>the_employee_id}).first
-    puts "\nProject #{the_project.name} has been assigned to #{the_employee.name}\n"
-  else
-    the_employee = Employee.where({:id=>the_project.employee_id}).first
-    puts "\nThat project has already been assigned to #{the_employee.name}\n"
-  end
+  view_employees
+  puts "\nSelect the index of the employee to whom you wish to assign the project"
+  the_employee_id = gets.chomp.to_i
+  the_employee = Employee.where({:id=>the_employee_id}).first
+  puts "\nDescribe the employee's contribution to the project"
+  the_contribution = gets.chomp
+  the_table_entry = the_project.employees_projects.create({:employee_id=>the_employee.id,
+                                                           :contribution=>the_contribution})
+  puts "\nProject #{the_project.name} has been assigned to #{the_employee.name}\n"
+  puts "   Their contribution is #{the_contribution}"
 end
 
 def mark_project_as_completed
@@ -223,8 +233,20 @@ def mark_project_as_completed
     the_project.update({:done=>true})
     puts "\nProject #{the_project.name} has been marked as completed\n"
   else
-    the_employee = Employee.where({:id=>the_project.employee_id}).first
     puts "\nThat project has already been marked as completed\n"
+  end
+end
+
+def project_who_working
+  view_projects
+  puts "\nSelect the index of the project for which you wish to see the employees"
+  the_project_id = gets.chomp.to_i
+  the_project = Project.where({:id=>the_project_id}).first
+  p the_project.employees_projects
+  puts "\nFor project #{the_project.name}, the employees are"
+  the_project.employees_projects.each do |employee_project|
+    p employee_project.employees
+    puts "#{employee_project.id}. #{employee_project.employees.name}, #{employee_project.contribution}"
   end
 end
 
